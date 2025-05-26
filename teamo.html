@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MI TERNURITA "KARIN"</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    .controls {
+      display: none;
+    }
+    .rose {
+      position: absolute;
+      width: 80px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform: scale(1);
+      opacity: 1;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <label>Velocidad: <input type="range" min="1" max="30" value="10" id="speedControl"></label>
+    <label>Color: <input type="color" id="colorPicker" value="#ff69b4"></label>
+  </div>
+
+  <video id="bgMusic" loop style="display:none">
+    <source src="video.mp4" type="video/mp4">
+  </video>
+
+  <canvas id="matrixCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("matrixCanvas");
+    const ctx = canvas.getContext("2d");
+    const music = document.getElementById("bgMusic");
+
+    document.addEventListener("click", (e) => {
+      if (music.paused) {
+        music.muted = false;
+        music.play();
+      }
+      explosion(e.clientX, e.clientY);
+      showRoseAt(e.clientX, e.clientY);
+    });
+
+    document.addEventListener("touchstart", (e) => {
+      const touch = e.touches[0];
+      explosion(touch.clientX, touch.clientY);
+      showRoseAt(touch.clientX, touch.clientY);
+    });
+
+    let speed = 400;
+    let message = "Suerte en tus parciales Amor";
+    let explosionMessage = "¡Tú puedes!";
+    let color = "#ff69b4";
+    let explosionColor = "#eebbbb"; // rosa más fuerte
+
+    const fallingTexts = [];
+
+    class FallingPhrase {
+      constructor(index) {
+        this.index = index;
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * -canvas.height;
+        this.speed = 1 + Math.random() * 2;
+        this.fontSize = 20 + Math.random() * 8;
+        this.rotation = (Math.random() - 0.5) * 0.2;
+        this.opacity = 0.6 + Math.random() * 0.4;
+      }
+      update() {
+        this.y += this.speed;
+        if (this.y > canvas.height) {
+          this.reset();
+        }
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.globalAlpha = this.opacity;
+        ctx.fillStyle = color;
+        ctx.font = `${this.fontSize}px Arial`;
+        ctx.fillText(message, 0, 0);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    for (let i = 0; i < 25; i++) { // Menos frases al principio
+      fallingTexts.push(new FallingPhrase(i));
+    }
+
+    function explosion(x, y) {
+      let frames = 50;
+      function animateExplosion() {
+        if (frames <= 0) return;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.font = `bold ${40 + (50 - frames)}px Arial`;
+        ctx.fillStyle = explosionColor;
+        ctx.globalAlpha = frames / 50;
+        ctx.fillText(explosionMessage, -100, 0);
+        ctx.restore();
+        frames--;
+        requestAnimationFrame(animateExplosion);
+      }
+      animateExplosion();
+    }
+
+    function showRoseAt(x, y) {
+      const img = document.createElement("img");
+      img.src = "imagen.png"; // Usa tu imagen de ramo aquí
+      img.className = "rose";
+      img.style.left = `${x - 40}px`;
+      img.style.top = `${y - 40}px`;
+      document.body.appendChild(img);
+
+      setTimeout(() => {
+        img.style.opacity = "0";
+        img.style.transform = "scale(0.8)";
+      }, 1800);
+      setTimeout(() => {
+        img.remove();
+      }, 2200);
+    }
+
+    function draw() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let phrase of fallingTexts) {
+        phrase.update();
+        phrase.draw();
+      }
+    }
+
+    function animate() {
+      setTimeout(() => {
+        requestAnimationFrame(animate);
+        draw();
+      }, 1000 / speed);
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    animate();
+  </script>
+</body>
+</html>
